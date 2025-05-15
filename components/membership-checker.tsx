@@ -97,7 +97,6 @@ export function MembershipChecker() {
 
         {result && <MembershipResult result={result} className="mt-4" />}
       </CardContent>
-      <CardFooter className="text-xs text-gray-500 justify-center">Powered by Bike Easy Nation Builder</CardFooter>
     </Card>
   )
 }

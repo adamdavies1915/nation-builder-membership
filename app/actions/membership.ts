@@ -11,10 +11,9 @@ for (const envVar of requiredEnvVars) {
   }
 }
 
-// Update the comment for clarity about the specific Nation Builder instance
 const API_TOKEN = process.env.NATION_BUILDER_API_TOKEN!
-const NATION_SLUG = "bikeeasy" // Hardcoded slug for Bike Easy
-const BASE_URL = `https://${NATION_SLUG}.nationbuilder.com/api/v1` // Will resolve to https://bikeeasy.nationbuilder.com/api/v1
+const NATION_SLUG = "bikeeasy"
+const BASE_URL = `https://${NATION_SLUG}.nationbuilder.com/api/v2`
 
 export async function checkMembership(email: string) {
   try {
@@ -22,57 +21,93 @@ export async function checkMembership(email: string) {
     const emailSchema = z.string().email()
     emailSchema.parse(email)
 
-    // First, search for the person by email
-    const personResponse = await fetch(`${BASE_URL}/people/match?email=${encodeURIComponent(email)}`, {
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${API_TOKEN}`,
-      },
-      cache: "no-store",
-    })
+    // First, search for the signup by email
+    const signupResponse = await fetch(
+      `${BASE_URL}/signups?filter[with_email_address][eq]=${encodeURIComponent(email)}`, 
+      {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${API_TOKEN}`,
+        },
+        cache: "no-store",
+      }
+    )
 
-    if (!personResponse.ok) {
-      if (personResponse.status === 404) {
+    if (!signupResponse.ok) {
+      if (signupResponse.status === 404) {
         return { found: false }
       }
 
-      const errorData = await personResponse.json().catch(() => ({}))
+      const errorData = await signupResponse.json().catch(() => ({}))
       console.error("Nation Builder API error:", errorData)
       return {
-        error: `API error: ${personResponse.status} ${personResponse.statusText}`,
+        error: `API error: ${signupResponse.status} ${signupResponse.statusText}`,
       }
     }
 
-    const personData = await personResponse.json()
+    const signupData = await signupResponse.json()
 
-    if (!personData.person) {
+    // Check if we found a signup
+    if (!signupData.data || signupData.data.length === 0) {
       return { found: false }
     }
 
-    const person = personData.person
+    const signup = signupData.data[0]
+    const signupId = signup.id
 
-    // Check if the person has an active membership
-    // This depends on how memberships are tracked in your Nation Builder instance
-    // Common approaches include checking tags, membership_level_name, or custom fields
-
-    const isMember = Boolean(
-      person.tags?.includes("member") || person.membership_level_name || person.membership_status === "active",
+    // Now fetch membership data for this signup
+    const membershipResponse = await fetch(
+      `${BASE_URL}/memberships?filter[signup_id]=${signupId}`,
+      {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${API_TOKEN}`,
+        },
+        cache: "no-store",
+      }
     )
 
-    // Format expiration date if available
-    let membershipExpires = null
-    if (person.membership_expires_on) {
-      membershipExpires = new Date(person.membership_expires_on).toLocaleDateString()
+    if (!membershipResponse.ok) {
+      const errorData = await membershipResponse.json().catch(() => ({}))
+      console.error("Nation Builder API error:", errorData)
+      return {
+        error: `API error: ${membershipResponse.status} ${membershipResponse.statusText}`,
+      }
     }
 
-    return {
-      found: true,
-      isMember,
-      name: person.first_name,
-      membershipStatus: person.membership_status || person.membership_level_name,
-      membershipExpires,
+    const membershipData = await membershipResponse.json()
+    
+    // Find active membership if it exists
+    const activeMembership = membershipData.data.find(m => m.attributes.status === "active")
+    
+    // Get name from signup data
+    const firstName = signup.attributes.first_name || ""
+    const lastName = signup.attributes.last_name || ""
+    const fullName = firstName + (lastName ? ` ${lastName}` : "")
+
+    if (activeMembership) {
+      return {
+        found: true,
+        isMember: true,
+        name: fullName,
+        membershipStatus: "active",
+        membershipType: activeMembership.attributes.membership_type_id,
+        membershipExpires: activeMembership.attributes.expires_on,
+        membershipStarted: activeMembership.attributes.started_at
+      }
+    } else {
+      // No active membership found
+      return {
+        found: true,
+        isMember: false,
+        name: fullName,
+        membershipStatus: "inactive",
+        membershipExpires: null
+      }
     }
+
   } catch (error) {
     console.error("Error checking membership:", error)
     if (error instanceof z.ZodError) {
