@@ -1,6 +1,7 @@
 "use server"
 
 import { z } from "zod"
+import { getAccessToken } from "../lib/token-manager"
 
 // Environment variables validation
 const requiredEnvVars = ["NATION_BUILDER_API_TOKEN"]
@@ -11,7 +12,6 @@ for (const envVar of requiredEnvVars) {
   }
 }
 
-const API_TOKEN = process.env.NATION_BUILDER_API_TOKEN!
 const NATION_SLUG = "bikeeasy"
 const BASE_URL = `https://${NATION_SLUG}.nationbuilder.com/api/v2`
 
@@ -20,6 +20,9 @@ export async function checkMembership(email: string) {
     // Validate email
     const emailSchema = z.string().email()
     emailSchema.parse(email)
+
+    // Get current access token
+    const API_TOKEN = await getAccessToken()
 
     // First, search for the signup by email
     const signupResponse = await fetch(
