@@ -9,6 +9,23 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'self' https://bikeeasy.org https://www.bikeeasy.org",
+          },
+        ],
+      },
+    ];
+  },
 }
 
 export default nextConfig
