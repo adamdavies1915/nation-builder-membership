@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Georgia, 'Times New Roman', serif;
 }
 
 @layer utilities {
@@ -14,40 +14,42 @@ body {
 
 @layer base {
   :root {
+    /* Bike Easy Brand Colors */
+    --bike-easy-blue: 0 147 181; /* #0093b5 */
+    --bike-easy-blue-dark: 85 122 138; /* #458798 */
+    --bike-easy-green: 88 166 69; /* #58a645 */
+    --bike-easy-green-dark: 122 129 102; /* #698b53 */
+    --bike-easy-purple: 113 79 160; /* #714fa0 */
+    --bike-easy-purple-dark: 127 103 110; /* #6f5b77 */
+    
+    /* Updated design system with brand colors */
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
+    --primary: var(--bike-easy-blue);
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
     --muted: 0 0% 96.1%;
     --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
+    --accent: var(--bike-easy-blue);
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
+    --ring: var(--bike-easy-blue);
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
+  
   .dark {
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
@@ -55,32 +57,19 @@ body {
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
+    --primary: var(--bike-easy-blue);
     --primary-foreground: 0 0% 9%;
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 14.9%;
     --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
+    --accent: var(--bike-easy-blue);
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --ring: var(--bike-easy-blue);
   }
 }
 
@@ -91,4 +80,75 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Bike Easy Brand Typography */
+.font-heading {
+  font-family: var(--font-oswald), 'Oswald', sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.font-subheading {
+  font-family: var(--font-montserrat), 'Montserrat', sans-serif;
+  font-weight: 400;
+}
+
+.font-body {
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+/* Bike Easy Brand Colors as Utilities */
+.bg-bike-blue {
+  background-color: rgb(var(--bike-easy-blue));
+}
+
+.bg-bike-blue-dark {
+  background-color: rgb(var(--bike-easy-blue-dark));
+}
+
+.bg-bike-green {
+  background-color: rgb(var(--bike-easy-green));
+}
+
+.bg-bike-green-dark {
+  background-color: rgb(var(--bike-easy-green-dark));
+}
+
+.bg-bike-purple {
+  background-color: rgb(var(--bike-easy-purple));
+}
+
+.bg-bike-purple-dark {
+  background-color: rgb(var(--bike-easy-purple-dark));
+}
+
+.text-bike-blue {
+  color: rgb(var(--bike-easy-blue));
+}
+
+.text-bike-blue-dark {
+  color: rgb(var(--bike-easy-blue-dark));
+}
+
+.text-bike-green {
+  color: rgb(var(--bike-easy-green));
+}
+
+.text-bike-purple {
+  color: rgb(var(--bike-easy-purple));
+}
+
+.border-bike-blue {
+  border-color: rgb(var(--bike-easy-blue));
+}
+
+.border-bike-green {
+  border-color: rgb(var(--bike-easy-green));
+}
+
+/* Bike Easy themed gradients */
+.bg-bike-gradient {
+  background: linear-gradient(135deg, rgb(var(--bike-easy-blue)) 0%, rgb(var(--bike-easy-blue-dark)) 100%);
 }
