@@ -74,6 +74,11 @@ body {
 }
 
 @layer base {
+   :root {
+    --background: 0 0% 97%; /* This is hsl(0, 0%, 97%) = #F7F7F7 */
+    /* ... rest of your variables */
+  }
+
   * {
     @apply border-border;
   }
