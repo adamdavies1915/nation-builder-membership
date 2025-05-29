@@ -1,4 +1,4 @@
-import { CheckCircle, XCircle, AlertCircle, UserCheck } from "lucide-react"
+import { CheckCircle, XCircle, AlertCircle, UserCheck, Mail, MailX } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface MembershipResultProps {
@@ -8,6 +8,8 @@ interface MembershipResultProps {
     membershipStatus?: string
     membershipExpires?: string
     name?: string
+    emailOptIn?: boolean
+    mobileOptIn?: boolean
   }
   className?: string
 }
@@ -65,6 +67,31 @@ export function MembershipResult({ result, className }: MembershipResultProps) {
               {result.name ? `Hello ${result.name}! ` : ""}
               You are in our system, but you don't have an active membership at this time.
             </p>
+            
+            {/* Email Subscription Status */}
+            {result.emailOptIn !== undefined && (
+              <div className="mb-3">
+                <div className={cn(
+                  "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium",
+                  result.emailOptIn 
+                    ? "bg-green-100 text-green-700 border border-green-200" 
+                    : "bg-gray-100 text-gray-600 border border-gray-200"
+                )}>
+                  {result.emailOptIn ? (
+                    <>
+                      <Mail className="h-3.5 w-3.5" />
+                      <span>Subscribed to emails</span>
+                    </>
+                  ) : (
+                    <>
+                      <MailX className="h-3.5 w-3.5" />
+                      <span>Not subscribed to emails</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+            
             <div className="bg-bike-blue/10 rounded-md p-3 border border-bike-blue/20">
               <p className="font-body text-xs text-bike-blue-dark leading-relaxed">
                 <strong>Join us today!</strong>{" "}
@@ -114,12 +141,46 @@ export function MembershipResult({ result, className }: MembershipResultProps) {
                   <span className="font-medium text-bike-green-dark">{result.membershipExpires}</span>
                 </div>
               )}
+              
+              {/* Email Subscription Status */}
+              {result.emailOptIn !== undefined && (
+                <div className="flex justify-between items-center py-1">
+                  <span className="font-medium text-gray-600">Email Updates:</span>
+                  <span className={cn(
+                    "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium",
+                    result.emailOptIn 
+                      ? "bg-green-100 text-green-700" 
+                      : "bg-gray-100 text-gray-600"
+                  )}>
+                    {result.emailOptIn ? (
+                      <>
+                        <Mail className="h-3 w-3" />
+                        <span>Subscribed</span>
+                      </>
+                    ) : (
+                      <>
+                        <MailX className="h-3 w-3" />
+                        <span>Not subscribed</span>
+                      </>
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
             
             <div className="bg-white/70 rounded-md p-3 border border-bike-green/20 mt-4">
               <p className="font-body text-xs text-bike-green-dark leading-relaxed">
-                <strong>Stay connected!</strong> Follow us on social media and check your email 
-                for updates on rides, events, and advocacy efforts in Greater New Orleans.
+                {result.emailOptIn ? (
+                  <>
+                    <strong>Stay connected!</strong> You're subscribed to our emails. Check your inbox 
+                    for updates on rides, events, and advocacy efforts in Greater New Orleans.
+                  </>
+                ) : (
+                  <>
+                    <strong>Stay connected!</strong> Consider subscribing to our email updates to receive 
+                    the latest news on rides, events, and advocacy efforts.
+                  </>
+                )}
               </p>
             </div>
           </div>

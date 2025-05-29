@@ -59,6 +59,10 @@ export async function checkMembership(email: string) {
     const signup = signupData.data[0]
     const signupId = signup.id
 
+    // Extract email subscription status from signup attributes
+    const emailOptIn = signup.attributes.email_opt_in ?? false
+    const mobileOptIn = signup.attributes.mobile_opt_in ?? false
+
     // Now fetch membership data for this signup
     const membershipResponse = await fetch(
       `${BASE_URL}/memberships?filter[signup_id]=${signupId}`,
@@ -98,7 +102,10 @@ export async function checkMembership(email: string) {
         membershipStatus: "active",
         membershipType: activeMembership.attributes.membership_type_id,
         membershipExpires: activeMembership.attributes.expires_on,
-        membershipStarted: activeMembership.attributes.started_at
+        membershipStarted: activeMembership.attributes.started_at,
+        // Email subscription status
+        emailOptIn: emailOptIn,
+        mobileOptIn: mobileOptIn,
       }
     } else {
       // No active membership found
@@ -107,7 +114,10 @@ export async function checkMembership(email: string) {
         isMember: false,
         name: fullName,
         membershipStatus: "inactive",
-        membershipExpires: null
+        membershipExpires: null,
+        // Email subscription status
+        emailOptIn: emailOptIn,
+        mobileOptIn: mobileOptIn,
       }
     }
 
