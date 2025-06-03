@@ -5,7 +5,8 @@
 
 ## Overview
 
-This project allows people to check their membership status in a NationBuilder system. Users can enter their details to verify if they are currently a member. The app is designed to be simple, user-friendly, and is automatically deployed to Vercel for easy access.
+This project allows people to check their membership status in a NationBuilder system. Built for a use case for BikeEasy but could be adapated for other orgs using nation builder. You can see it live at [BikeEasy](https://bikeeasy.org/check-your-membership/).
+Users can enter their details to verify if they are currently a member. The app is designed to be simple, user-friendly, and is automatically deployed to Vercel for easy access.
 
 ## Deployment
 
