@@ -1,12 +1,33 @@
 // app/lib/token-manager.ts
-import { Redis } from '@upstash/redis'
+import Database from 'better-sqlite3'
+import path from 'path'
 import { NATIONBUILDER_CONFIG } from './oauth-config'
 
-// Initialize Redis client
-const redis = new Redis({
-  url: process.env.KV_REST_API_URL!,
-  token: process.env.KV_REST_API_TOKEN!,
-})
+// Initialize SQLite database with persistent storage
+const dbPath = process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'tokens.db')
+
+// Ensure the database directory exists and initialize
+function getDb(): Database.Database {
+  const fs = require('fs')
+  const dir = path.dirname(dbPath)
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true })
+  }
+
+  const db = new Database(dbPath)
+
+  // Create tokens table if it doesn't exist
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tokens (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      access_token TEXT NOT NULL,
+      refresh_token TEXT NOT NULL,
+      expires_at INTEGER NOT NULL
+    )
+  `)
+
+  return db
+}
 
 interface TokenData {
   access_token: string
@@ -15,30 +36,42 @@ interface TokenData {
 }
 
 export async function getAccessToken(): Promise<string> {
-  // Try to get token from Redis
-  const tokenData = await redis.get<TokenData>('nationbuilder_token')
-  
-  // If no token or token is expired, return null - need to authenticate
-  if (!tokenData) {
-    throw new Error('No token available')
-  }
-  
-  // If token is about to expire (within 5 minutes), refresh it
-  if (tokenData.expires_at < Date.now() + 5 * 60 * 1000) {
-    try {
-      const newTokenData = await refreshToken(tokenData.refresh_token)
-      return newTokenData.access_token
-    } catch (error) {
-      console.error('Failed to refresh token:', error)
-      throw new Error('Authentication needed')
+  const db = getDb()
+
+  try {
+    // Try to get token from SQLite
+    const row = db.prepare('SELECT access_token, refresh_token, expires_at FROM tokens WHERE id = 1').get() as TokenData | undefined
+
+    // If no token, return error - need to authenticate
+    if (!row) {
+      throw new Error('No token available')
     }
+
+    const tokenData: TokenData = {
+      access_token: row.access_token,
+      refresh_token: row.refresh_token,
+      expires_at: row.expires_at,
+    }
+
+    // If token is about to expire (within 5 minutes), refresh it
+    if (tokenData.expires_at < Date.now() + 5 * 60 * 1000) {
+      try {
+        const newTokenData = await refreshToken(tokenData.refresh_token)
+        return newTokenData.access_token
+      } catch (error) {
+        console.error('Failed to refresh token:', error)
+        throw new Error('Authentication needed')
+      }
+    }
+
+    // Return existing valid token
+    return tokenData.access_token
+  } finally {
+    db.close()
   }
-  
-  // Return existing valid token
-  return tokenData.access_token
 }
 
-async function refreshToken(refreshToken: string): Promise<TokenData> {
+async function refreshToken(refreshTokenValue: string): Promise<TokenData> {
   const response = await fetch(NATIONBUILDER_CONFIG.tokenUrl, {
     method: 'POST',
     headers: {
@@ -46,7 +79,7 @@ async function refreshToken(refreshToken: string): Promise<TokenData> {
     },
     body: JSON.stringify({
       grant_type: 'refresh_token',
-      refresh_token: refreshToken,
+      refresh_token: refreshTokenValue,
       client_id: NATIONBUILDER_CONFIG.clientId,
       client_secret: NATIONBUILDER_CONFIG.clientSecret,
       redirect_uri: NATIONBUILDER_CONFIG.redirectUri,
@@ -60,17 +93,30 @@ async function refreshToken(refreshToken: string): Promise<TokenData> {
   }
 
   const data = await response.json()
-  
+
   // Calculate expiration time (current time + expires_in seconds)
   const tokenData: TokenData = {
     access_token: data.access_token,
-    refresh_token: data.refresh_token || refreshToken, // Use new refresh token if provided, otherwise keep the old one
+    refresh_token: data.refresh_token || refreshTokenValue, // Use new refresh token if provided, otherwise keep the old one
     expires_at: Date.now() + data.expires_in * 1000,
   }
-  
+
   // Store the new token
-  await redis.set('nationbuilder_token', tokenData)
-  
+  const db = getDb()
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO tokens (id, access_token, refresh_token, expires_at)
+      VALUES (1, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        access_token = excluded.access_token,
+        refresh_token = excluded.refresh_token,
+        expires_at = excluded.expires_at
+    `)
+    stmt.run(tokenData.access_token, tokenData.refresh_token, tokenData.expires_at)
+  } finally {
+    db.close()
+  }
+
   return tokenData
 }
 
@@ -96,31 +142,52 @@ export async function storeInitialToken(code: string): Promise<TokenData> {
   }
 
   const data = await response.json()
-  
+
   const tokenData: TokenData = {
     access_token: data.access_token,
     refresh_token: data.refresh_token,
     expires_at: Date.now() + data.expires_in * 1000,
   }
-  
+
   // Store the token
-  await redis.set('nationbuilder_token', tokenData)
-  
+  const db = getDb()
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO tokens (id, access_token, refresh_token, expires_at)
+      VALUES (1, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        access_token = excluded.access_token,
+        refresh_token = excluded.refresh_token,
+        expires_at = excluded.expires_at
+    `)
+    stmt.run(tokenData.access_token, tokenData.refresh_token, tokenData.expires_at)
+  } finally {
+    db.close()
+  }
+
   return tokenData
 }
 
 // Utility function to check if we have a valid token (for connection status)
 export async function hasValidToken(): Promise<boolean> {
+  const db = getDb()
   try {
-    const tokenData = await redis.get<TokenData>('nationbuilder_token')
-    return !!tokenData && tokenData.expires_at > Date.now()
+    const row = db.prepare('SELECT expires_at FROM tokens WHERE id = 1').get() as { expires_at: number } | undefined
+    return !!row && row.expires_at > Date.now()
   } catch (error) {
     console.error('Error checking token validity:', error)
     return false
+  } finally {
+    db.close()
   }
 }
 
 // Utility function to clear token (for admin logout/disconnect)
 export async function clearToken(): Promise<void> {
-  await redis.del('nationbuilder_token')
+  const db = getDb()
+  try {
+    db.prepare('DELETE FROM tokens WHERE id = 1').run()
+  } finally {
+    db.close()
+  }
 }
