@@ -16,10 +16,14 @@ RUN \
 
 # Rebuild the source code only when needed
 FROM base AS builder
+ARG CACHEBUST=1
 RUN apk add --no-cache python3 make g++
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Debug: list source files to verify they're copied
+RUN ls -la app/lib/ && ls -la components/
 
 # Build the application
 RUN \
