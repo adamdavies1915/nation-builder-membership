@@ -22,8 +22,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Debug: list source files to verify they're copied
-RUN ls -la app/lib/ && ls -la components/
+# Debug: list source files and tsconfig
+RUN ls -la app/lib/ && ls -la components/ && cat tsconfig.json
 
 # Build the application
 RUN \
