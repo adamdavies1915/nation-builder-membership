@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { storeInitialToken } from '@/app/lib/token-manager'
+import { storeInitialToken } from '../../../lib/token-manager'
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
