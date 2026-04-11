@@ -1,4 +1,4 @@
-import { MembershipChecker } from "../components/membership-checker"
+import { MembershipChecker } from "@/components/membership-checker"
 
 export default function Home() {
   return (
