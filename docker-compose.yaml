@@ -6,7 +6,6 @@ services:
     volumes:
       - sqlite-data:/app/data
     environment:
-      - SERVICE_FQDN_APP_3000
       - NODE_ENV=production
       - DATABASE_PATH=/app/data/tokens.db
     restart: unless-stopped
@@ -16,6 +15,25 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    networks:
+      - default
+      - coolify
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=coolify
+      - "traefik.http.routers.membership-http.rule=Host(`membership.cargobay.dev`)"
+      - traefik.http.routers.membership-http.entrypoints=http
+      - traefik.http.routers.membership-http.middlewares=redirect-to-https
+      - "traefik.http.routers.membership.rule=Host(`membership.cargobay.dev`)"
+      - traefik.http.routers.membership.entrypoints=https
+      - traefik.http.routers.membership.tls=true
+      - traefik.http.routers.membership.tls.certresolver=letsencrypt
+      - traefik.http.services.membership.loadbalancer.server.port=3000
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
 
 volumes:
   sqlite-data:
+
+networks:
+  coolify:
+    external: true
