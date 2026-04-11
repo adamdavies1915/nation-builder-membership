@@ -1,11 +1,12 @@
 services:
   app:
     build: .
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     volumes:
       - sqlite-data:/app/data
     environment:
+      - SERVICE_FQDN_APP_3000
       - NODE_ENV=production
       - DATABASE_PATH=/app/data/tokens.db
     restart: unless-stopped
