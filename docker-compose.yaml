@@ -8,6 +8,9 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_PATH=/app/data/tokens.db
+      - NATIONBUILDER_CLIENT_ID=${NATIONBUILDER_CLIENT_ID}
+      - NATIONBUILDER_CLIENT_SECRET=${NATIONBUILDER_CLIENT_SECRET}
+      - OAUTH_REDIRECT_URI=${OAUTH_REDIRECT_URI}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/"]
