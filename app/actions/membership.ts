@@ -3,14 +3,8 @@
 import { z } from "zod"
 import { getAccessToken } from "../lib/token-manager"
 
-// Environment variables validation
-const requiredEnvVars = ["NATION_BUILDER_API_TOKEN"]
-
-for (const envVar of requiredEnvVars) {
-  if (!process.env[envVar]) {
-    throw new Error(`Missing required environment variable: ${envVar}`)
-  }
-}
+// Membership tokens are obtained via the OAuth flow (see token-manager) and
+// stored in SQLite — no static API token env var is required here.
 
 const NATION_SLUG = "bikeeasy"
 const BASE_URL = `https://${NATION_SLUG}.nationbuilder.com/api/v2`
