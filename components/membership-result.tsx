@@ -6,6 +6,7 @@ interface MembershipResultProps {
     found: boolean
     isMember: boolean
     membershipStatus?: string
+    membershipType?: string | null
     membershipExpires?: string
     name?: string
     emailOptIn?: boolean
@@ -129,6 +130,12 @@ export function MembershipResult({ result, className }: MembershipResultProps) {
             </p>
             
             <div className="grid grid-cols-1 gap-2 mt-3">
+              {result.membershipType && (
+                <div className="flex justify-between items-center py-1">
+                  <span className="font-medium text-gray-600">Membership:</span>
+                  <span className="font-medium text-bike-green-dark">{result.membershipType}</span>
+                </div>
+              )}
               {result.membershipStatus && (
                 <div className="flex justify-between items-center py-1">
                   <span className="font-medium text-gray-600">Status:</span>

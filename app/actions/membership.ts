@@ -9,6 +9,57 @@ import { getAccessToken } from "../lib/token-manager"
 const NATION_SLUG = "bikeeasy"
 const BASE_URL = `https://${NATION_SLUG}.nationbuilder.com/api/v2`
 
+// Membership types rarely change, so cache the id -> name lookup between requests
+const MEMBERSHIP_TYPE_CACHE_TTL = 60 * 60 * 1000
+let membershipTypeCache: { names: Map<string, string>; fetchedAt: number } | null = null
+
+async function getMembershipTypeName(
+  typeId: string | number | null | undefined,
+  apiToken: string,
+): Promise<string | null> {
+  if (typeId === null || typeId === undefined) {
+    return null
+  }
+
+  const isCacheStale =
+    !membershipTypeCache || Date.now() - membershipTypeCache.fetchedAt > MEMBERSHIP_TYPE_CACHE_TTL
+
+  if (isCacheStale) {
+    try {
+      const typesResponse = await fetch(`${BASE_URL}/membership_types`, {
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiToken}`,
+        },
+        cache: "no-store",
+      })
+
+      if (!typesResponse.ok) {
+        throw new Error(`${typesResponse.status} ${typesResponse.statusText}`)
+      }
+
+      const typesData = await typesResponse.json()
+      const names = new Map<string, string>()
+
+      for (const membershipType of typesData.data ?? []) {
+        const name = membershipType.attributes?.name
+        if (name) {
+          names.set(String(membershipType.id), name)
+        }
+      }
+
+      membershipTypeCache = { names, fetchedAt: Date.now() }
+    } catch (error) {
+      // A missing type name shouldn't fail the whole membership check
+      console.error("Failed to load membership types:", error)
+      return null
+    }
+  }
+
+  return membershipTypeCache?.names.get(String(typeId)) ?? null
+}
+
 export async function checkMembership(email: string) {
   try {
     // Validate email
@@ -89,12 +140,19 @@ export async function checkMembership(email: string) {
     const fullName = firstName + (lastName ? ` ${lastName}` : "")
 
     if (activeMembership) {
+      const membershipTypeId = activeMembership.attributes.membership_type_id
+      // Some nations expose the type name directly on the membership; fall back to a lookup
+      const membershipType =
+        activeMembership.attributes.name ||
+        (await getMembershipTypeName(membershipTypeId, API_TOKEN))
+
       return {
         found: true,
         isMember: true,
         name: fullName,
         membershipStatus: "active",
-        membershipType: activeMembership.attributes.membership_type_id,
+        membershipType: membershipType,
+        membershipTypeId: membershipTypeId,
         membershipExpires: activeMembership.attributes.expires_on,
         membershipStarted: activeMembership.attributes.started_at,
         // Email subscription status
